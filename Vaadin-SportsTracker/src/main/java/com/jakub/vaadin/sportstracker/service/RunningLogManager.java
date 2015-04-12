@@ -43,8 +43,14 @@ public class RunningLogManager {
     }
 
     public void updateLog(RunningLog log) {
-		// TODO DOIT YOURSELF
-
+        for(RunningLog p: db){
+            if (p.getId().compareTo(log.getId()) == 0) {
+                db.remove(p);
+                break;
+            }
+        }
+        db.add(log);
+        updateAverage();
     }
 
     private void updateAverage() {
@@ -68,5 +74,7 @@ public class RunningLogManager {
     public void setAverageTime(double averageTime) {
         this.averageTime = averageTime;
     }
+    
+    
 
 }

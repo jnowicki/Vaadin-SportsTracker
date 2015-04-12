@@ -30,6 +30,7 @@ import com.vaadin.ui.TextField;
 import com.vaadin.ui.UI;
 import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.Window;
+import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -45,6 +46,8 @@ public class MyUI extends UI {
     private static final long serialVersionUID = 1L;
     
     final Table logsTable = new Table("Wpisy z Biegania");
+    DecimalFormat df = new DecimalFormat("#");
+    final Label expectedTimeLabel = new Label();
 
     private final RunningLogManager runningLogManager = new RunningLogManager();
 
@@ -95,7 +98,13 @@ public class MyUI extends UI {
             final FormLayout form = new FormLayout();
             final FieldGroup binder = new FieldGroup(runningLogItem);
             
-            final Button saveBtn = new Button(" Dodaj wpis ");
+            final Button saveBtn = new Button();
+            if(action == Action.ADD){
+                saveBtn.setCaption("Dodaj Wpis");
+            } else {
+                saveBtn.setCaption("Edytuj Wpis");
+            }
+            
             final Button cancelBtn = new Button(" Anuluj ");
             
             form.addComponent(binder.buildAndBind("Dzień", "day"));
@@ -138,7 +147,8 @@ public class MyUI extends UI {
                             runningLogManager.updateLog(runningLogItem.getBean());
                         }
                         
-
+                        expectedTimeLabel.setValue("--Twój aktualny czas do pobicia to " + df.format(runningLogManager.getAverageTime()) + "min");
+                        
                         runningLogs.removeAllItems();
                         runningLogs.addAll(runningLogManager.findAll());
                         //calcAverage(logsTable);
@@ -176,6 +186,7 @@ public class MyUI extends UI {
         final HorizontalLayout hlu = new HorizontalLayout();
         final TextField usernameTxtFld = new TextField();
         final Label usernameLabel = new Label();
+        
         final Button loginUserBtn = new Button("Zaloguj");
         final Button logoutUserBtn = new Button("Wyloguj");
 
@@ -212,7 +223,10 @@ public class MyUI extends UI {
             public void buttonClick(ClickEvent event) {
                 runningLogManager.delete(runningLog);
                 runningLogs.removeAllItems();
-                runningLogs.addAll(runningLogManager.findAll());              
+                runningLogs.addAll(runningLogManager.findAll()); 
+                if(runningLogManager.getAverageTime() != 0.0){
+                    expectedTimeLabel.setValue("--Twój aktualny czas do pobicia to " + df.format(runningLogManager.getAverageTime()));
+                }
             }
         });
         
@@ -223,8 +237,13 @@ public class MyUI extends UI {
                 String username = (String) usernameTxtFld.getValue();
                 session.setAttribute("username", username);
                 usernameLabel.setValue("Zalogowałeś się jako " + username);
+                             
                 hlu.removeAllComponents();
                 hlu.addComponent(usernameLabel);
+                if(runningLogManager.getAverageTime() != 0.0){
+                    expectedTimeLabel.setValue("--Twój aktualny czas do pobicia to " + df.format(runningLogManager.getAverageTime()));
+                }     
+                hlu.addComponent(expectedTimeLabel);
                 hl.addComponent(addLogFormBtn);
                 hl.addComponent(editLogFormBtn);
                 hl.addComponent(deleteLogFormBtn);
@@ -291,7 +310,7 @@ public class MyUI extends UI {
         logsTable.setColumnHeader("distance", "Dystans");
         logsTable.setColumnHeader("actualTime", "Faktyczny czas");
         logsTable.setColumnHeader("expectedTime", "Oczekiwany czas");
-        logsTable.setColumnHeader("surpassed", "Średnia przekroczona?");     
+        logsTable.setColumnHeader("surpassed", "Czas pokonany");     
         logsTable.setSelectable(true);
         logsTable.setImmediate(true);
         logsTable.setColumnReorderingAllowed(true);
@@ -325,7 +344,7 @@ public class MyUI extends UI {
                     runningLog.setUsername(selectedLog.getUsername());
                     runningLog.setId(selectedLog.getId());
                 }
-                //calcAverage(logsTable);
+                
             }
 
         });
@@ -345,22 +364,6 @@ public class MyUI extends UI {
 
         vl.addComponent(horizontalLayout);             
     }
-    /*
-    private double calcAverage(Table source, ){
-        Double sum = 0.0;
-        for(Iterator i = source.getItemIds().iterator(); i.hasNext();){
-            RunningLog rl = (RunningLog) i.next();
-            sum += rl.getActualTime();
-            Notification notif = new Notification(Double.toString(sum / source.getItemIds().size()));
-            notif.setDelayMsec(2000);
-            notif.show(Page.getCurrent());
-            
-        }
-        
-        return sum / source.getItemIds().size();
-        runningLogManager.setAverageTime(sum / source.getItemIds().size());
-    }
-    */
 
     @WebServlet(urlPatterns = "/*", name = "MyUIServlet", asyncSupported = true)
     @VaadinServletConfiguration(ui = MyUI.class, productionMode = false)
